@@ -3,42 +3,46 @@ using UnityEngine.InputSystem;
 
 namespace Rappel
 {
-    /// <summary>
-    /// 그립 값으로 하강/제동을 계산해 리그(XR Origin)를 아래로 움직인다.
-    /// - gripValue가 임계값 이하: 제동 0 (자유 하강)
-    /// - 임계값 초과: 초과분에 비례해 제동력 증가
-    /// - 제동력 = 쥔 정도 x (기본 제동력 + 속도 마찰 x 속도)
-    /// - 가속도 = 중력 - 제동력 / 몸무게
-    /// </summary>
     public class RappelDescent : MonoBehaviour
     {
         [Header("입력")]
-        [SerializeField] InputActionProperty gripAction;
+        [SerializeField] private InputActionProperty gripAction;
 
         [Header("움직일 대상")]
-        [SerializeField] Transform rig;
+        [SerializeField] private Transform rig;
 
-        [Header("물리 값")]
-        [SerializeField] float bodyMass = 70f;          // kg
-        [SerializeField] float gravity = 9.81f;         // m/s^2
-        [SerializeField] float baseBrakeForce = 900f;   // N, 속도와 상관없이 걸리는 제동
-        [SerializeField] float speedFriction = 470f;    // N per m/s, 빠를수록 더 걸리는 제동
+        [Header("그립 → 목표 속도 (가로: 그립 0~1, 세로: m/s)")]
+        [SerializeField] private AnimationCurve gripToSpeed = new AnimationCurve(
+            new Keyframe(0f, 3f),
+            new Keyframe(0.3f, 2f),
+            new Keyframe(0.5f, 0.8f),
+            new Keyframe(0.7f, 0f),
+            new Keyframe(1f, 0f));
 
-        [Header("그립")]
-        [Range(0f, 1f)]
-        [SerializeField] float gripThreshold = 0.2f;
+        [Header("가감속 (m/s^2)")]
+        [SerializeField] private float speedUpRate = 1.5f;   // 풀었을 때 속도가 붙는 빠르기
+        [SerializeField] private float slowDownRate = 3f;    // 쥐었을 때 멈추는 빠르기
 
         [Header("안전")]
-        [SerializeField] float maxDescentSpeed = 3f;
-        [SerializeField] float groundY = 0f;
+        [SerializeField] private float maxDescentSpeed = 3f;
+        [SerializeField] private float groundY = 0f;
+
+        [Header("상태")]
+        [SerializeField] private bool canDescend;     // PelvisCheck가 true로 바꿔 줌. false면 하강 안 함
 
         [Header("디버그 (읽기용)")]
-        [SerializeField] float gripValue;     // 현재 그립 값 0~1
-        [SerializeField] float descentSpeed;  // 현재 하강 속도 m/s (아래 방향이 +)
-        [SerializeField] float brakeForce;    // 현재 제동력 N
+        [SerializeField] private float gripValue;     // 현재 그립 값 0~1
+        [SerializeField] private float targetSpeed;   // 곡선에서 읽은 목표 속도 m/s
+        [SerializeField] private float descentSpeed;  // 현재 하강 속도 m/s (아래 방향이 +)
 
         public float GripValue => gripValue;
         public float DescentSpeed => descentSpeed;
+
+        public bool CanDescend
+        {
+            get => canDescend;
+            set => canDescend = value;
+        }
 
         void Awake()
         {
@@ -58,31 +62,24 @@ namespace Rappel
 
         void Update()
         {
+            // 0. 골반 그립 확인 전에는 하강하지 않음
+            if (!canDescend)
+                return;
+
             float dt = Time.deltaTime;
 
             // 1. 그립 값 읽기
             gripValue = gripAction.action != null ? gripAction.action.ReadValue<float>() : 0f;
 
-            // 2. 쥔 정도: 임계값 이하면 0, 끝까지 쥐면 1
-            //    예) 임계값 0.2일 때 그립 0.2 → 0, 0.6 → 0.5, 1.0 → 1
-            float gripRatio = 0f;
-            if (gripValue > gripThreshold)
-                gripRatio = (gripValue - gripThreshold) / (1f - gripThreshold);
+            // 2. 곡선에서 목표 속도 읽기 (곡선이 0 아래나 최대 속도 위로 튀어도 잘라냄)
+            targetSpeed = Mathf.Clamp(gripToSpeed.Evaluate(gripValue), 0f, maxDescentSpeed);
 
-            // 3. 제동력 = 쥔 정도 x (기본 제동력 + 속도 마찰 x 현재 속도)
-            //    빨리 내려갈수록 마찰이 커져서, 덜 쥐면 일정한 속도로 슬슬 내려감
-            brakeForce = gripRatio * (baseBrakeForce + speedFriction * descentSpeed);
+            // 3. 현재 속도를 목표 속도 쪽으로 가속도 제한을 두고 이동
+            //    빨라질 때와 느려질 때 빠르기를 따로 씀
+            float rate = targetSpeed > descentSpeed ? speedUpRate : slowDownRate;
+            descentSpeed = Mathf.MoveTowards(descentSpeed, targetSpeed, rate * dt);
 
-            // 4. 가속도 = (몸무게 x 중력 - 제동력) / 몸무게   (힘 = 질량 x 가속도)
-            float acceleration = (bodyMass * gravity - brakeForce) / bodyMass;
-
-            // 5. 이번 프레임 동안 속도가 바뀌는 양 = 가속도 x 프레임 시간
-            descentSpeed += acceleration * dt;
-
-            // 제동은 속도를 0까지만 줄일 수 있음 (위로 끌어올리지 않음)
-            descentSpeed = Mathf.Clamp(descentSpeed, 0f, maxDescentSpeed);
-
-            // 6. 리그 이동: 이번 프레임에 내려가는 거리 = 속도 x 프레임 시간
+            // 4. 리그 이동: 이번 프레임에 내려가는 거리 = 속도 x 프레임 시간
             Vector3 pos = rig.position;
             pos.y -= descentSpeed * dt;
             if (pos.y <= groundY)
