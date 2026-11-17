@@ -7,7 +7,7 @@ Rappel VR 프로젝트를 이어서 진행하려고 해. 모든 답변과 제안
 
 ## 프로젝트
 - Meta Quest 3용 1인 VR 체험. 그립을 쥐는 강도로 하강 속도를 조절하며 건물 외벽을 레펠로 내려감.
-- 기획서: Assets/Docs/Rappel — 컨셉 기획서.pdf (먼저 읽어 줘)
+- 기획서: Assets/02. Docs/Rappel — 컨셉 기획서.pdf (먼저 읽어 줘)
 - Unity 6.3 (6000.3.15f1), OpenXR + XR Interaction Toolkit 3.5.1, Obi Rope 7.0.5
 
 ## 설계 원칙
@@ -15,14 +15,14 @@ Rappel VR 프로젝트를 이어서 진행하려고 해. 모든 답변과 제안
 - Obi 구성 계획: ObiSolver(Burst 백엔드) + ObiRope, 옥상 고정점은 ObiParticleAttachment(Static), 8자고리와 오른손은 ObiPinhole, 벽에 ObiCollider, 렌더링은 ObiPathSmoother + ObiRopeExtrudedRenderer. Pinhole이 불안정하면 ObiRopeCursor로 대체.
 
 ## 현재 상태
-- Assets/Scripts/Rappel/RappelDescent.cs (XR Origin에 붙어 있음)
+- Assets/01. Scripts/Rappel/RappelDescent.cs (XR Origin에 붙어 있음)
   - 그립 값: XRI Right Interaction/Select Value (InputActionProperty, Use Reference)
   - (11/16 변경) 물리 공식(제동력/마찰) 방식은 속도가 너무 일정하고 그립이 예민해서 폐기
   - 그립 → 목표 속도: 인스펙터 곡선 gripToSpeed (기본: 0→3, 0.3→2, 0.5→0.8, 0.7 이상→0 m/s)
   - 실제 속도는 목표 속도를 가속도 제한으로 따라감 (speedUpRate 1.5, slowDownRate 3 m/s²)
   - 최대 하강 속도 3 m/s, groundY 아래로는 안 내려감
   - canDescend가 false면 하강 안 함 (PelvisCheck가 true로 바꿈)
-- Assets/Scripts/Rappel/PelvisCheck.cs (XR Origin에 붙어 있음)
+- Assets/01. Scripts/Rappel/PelvisCheck.cs (XR Origin에 붙어 있음)
   - 골반 위치 = 머리 위치 + pelvisOffset (머리 Yaw 기준), 반경 pelvisRadius 안에 오른손 + 그립 1 → descent.CanDescend = true (한 번 true면 유지)
   - pelvisMarker(구)가 골반 위치를 따라다니고, 손이 안이면 초록/밖이면 하늘색
 - 11/17: 하강 수치와 골반 그립 Link 테스트 완료

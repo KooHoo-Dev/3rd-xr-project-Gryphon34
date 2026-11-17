@@ -1,12 +1,11 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Rappel
 {
     public class RappelDescent : MonoBehaviour
     {
         [Header("입력")]
-        [SerializeField] private InputActionProperty gripAction;
+        [SerializeField] private BrakeManager brakeManager;   // 두 손 중 제동에 쓸 그립 값을 받아 옴
 
         [Header("움직일 대상")]
         [SerializeField] private Transform rig;
@@ -50,26 +49,20 @@ namespace Rappel
                 rig = transform;
         }
 
-        void OnEnable()
-        {
-            gripAction.action?.Enable();
-        }
-
-        void OnDisable()
-        {
-            gripAction.action?.Disable();
-        }
-
         void Update()
         {
             // 0. 골반 그립 확인 전에는 하강하지 않음
             if (!canDescend)
                 return;
 
+            // BrakeManager가 연결 안 돼 있으면 그립 값을 알 수 없으니 하강하지 않음 (그립 0 = 최고 속도로 떨어지는 것 방지)
+            if (brakeManager == null)
+                return;
+
             float dt = Time.deltaTime;
 
-            // 1. 그립 값 읽기
-            gripValue = gripAction.action != null ? gripAction.action.ReadValue<float>() : 0f;
+            // 1. 그립 값 읽기: BrakeManager가 고른 손(제동 위치 + 더 세게 쥔 손)의 값
+            gripValue = brakeManager.BrakeGrip;
 
             // 2. 곡선에서 목표 속도 읽기 (곡선이 0 아래나 최대 속도 위로 튀어도 잘라냄)
             targetSpeed = Mathf.Clamp(gripToSpeed.Evaluate(gripValue), 0f, maxDescentSpeed);

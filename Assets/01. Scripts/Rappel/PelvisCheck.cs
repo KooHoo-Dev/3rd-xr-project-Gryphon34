@@ -51,18 +51,19 @@ namespace Rappel
             if (pelvisMarker != null)
                 pelvisMarker.position = GetPelvisPosition();
 
-            // 이미 하강 가능 상태면 더 확인할 필요 없음
-            if (descent.CanDescend)
-                return;
-
-            gripValue = gripAction.action != null ? gripAction.action.ReadValue<float>() : 0f;
-
+            // 손이 골반 안인지 확인 (하강 가능 상태가 된 뒤에도 매 프레임)
             distanceToPelvis = Vector3.Distance(rightController.position, GetPelvisPosition());
             isAtPelvis = distanceToPelvis <= pelvisRadius;
 
             // 손이 골반 안에 있으면 초록색, 밖이면 하늘색
             if (markerRenderer != null)
                 markerRenderer.material.color = isAtPelvis ? insideColor : outsideColor;
+
+            // 이미 하강 가능 상태면 캘리브레이션 확인은 더 필요 없음
+            if (descent.CanDescend)
+                return;
+
+            gripValue = gripAction.action != null ? gripAction.action.ReadValue<float>() : 0f;
 
             if (isAtPelvis && gripValue >= requiredGrip)
             {
