@@ -4,9 +4,9 @@ namespace Rappel
 {
     public enum BrakeHand
     {
-        None,   // 제동 위치에 있는 손이 없음
-        Right,  // 오른손(제동 줄)으로 제동 중
-        Left    // 왼손(8자고리)으로 제동 중
+        None,
+        Right,
+        Left
     }
 
     // 두 HandBrake 중 제동 위치에 있는 손의 그립 값을 내보냄
@@ -33,7 +33,7 @@ namespace Rappel
 
             if (rightAtBrake && leftAtBrake)
             {
-                // 더 세게 쥔 손. 값이 같으면 지금 제동 중인 손 유지 (표시가 왔다 갔다 바뀌지 않게)
+                // 더 세게 쥔 손. 값이 같으면 지금 제동 중인 손 유지
                 if (rightHand.Grip > leftHand.Grip) activeHand = BrakeHand.Right;
                 else if (leftHand.Grip > rightHand.Grip) activeHand = BrakeHand.Left;
                 else if (activeHand == BrakeHand.None) activeHand = BrakeHand.Right;
