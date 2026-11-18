@@ -13,7 +13,7 @@ namespace Rappel
     {
         [Header("연결")]
         [SerializeField] private Transform head;          // Main Camera
-        [SerializeField] private RappelDescent descent;   // CanDescend가 true가 되는 순간을 확인
+        [SerializeField] private RappelStateMachine stateMachine;   // 준비 단계가 끝나는 순간을 확인
 
         [Header("머리 기준 위치 (m)")]
         [SerializeField] private float xOffset = 0f;      // + 오른쪽
@@ -23,13 +23,13 @@ namespace Rappel
         [Header("디버그 (읽기용)")]
         [SerializeField] private bool isLocked;           // 캘리브레이션 때 위치를 맞췄는지
 
-        // PelvisCheck(Update)가 CanDescend를 바꾼 같은 프레임에 바로 맞춤
+        // PelvisCheck(Update)가 준비 → 벽으로 바꾼 같은 프레임에 바로 맞춤
         void LateUpdate()
         {
-            if (isLocked || head == null || descent == null)
+            if (isLocked || head == null || stateMachine == null)
                 return;
 
-            if (!descent.CanDescend)
+            if (stateMachine.State == RappelState.Ready)
                 return;
 
             Transform parent = transform.parent;

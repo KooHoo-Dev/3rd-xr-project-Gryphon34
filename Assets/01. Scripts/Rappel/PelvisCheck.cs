@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics;
 
 namespace Rappel
 {
@@ -9,7 +10,7 @@ namespace Rappel
         [SerializeField] private InputActionProperty gripAction;   // XRI Right Interaction/Select Value
         [SerializeField] private Transform head;                   // Main Camera
         [SerializeField] private Transform rightController;        // Right Controller
-        [SerializeField] private RappelDescent descent;
+        [SerializeField] private RappelStateMachine stateMachine;   // 캘리브레이션 되면 준비 → 벽
 
         [Header("골반 위치 (머리 기준)")]
         [SerializeField] private Vector3 pelvisOffset = new Vector3(0.15f, -0.65f, 0f); // x 오른쪽, y 위, z 앞 (m)
@@ -25,6 +26,11 @@ namespace Rappel
         [Header("그립")]
         [Range(0f, 1f)]
         [SerializeField] private float requiredGrip = 1f;
+
+        [Header("캘리브레이션 성공 햅틱")]
+        [SerializeField] private HapticImpulsePlayer haptic;      // Right Controller의 Haptic Impulse Player
+        [SerializeField] private float hapticAmplitude = 0.8f;    // 진동 세기 0~1
+        [SerializeField] private float hapticDuration = 0.2f;     // 진동 길이 (초)
 
         [Header("디버그 (읽기용)")]
         [SerializeField] private float gripValue;
@@ -44,7 +50,7 @@ namespace Rappel
 
         void Update()
         {
-            if (head == null || rightController == null || descent == null)
+            if (head == null || rightController == null || stateMachine == null)
                 return;
 
             // 표시용 오브젝트를 골반 위치로 옮김
@@ -59,17 +65,14 @@ namespace Rappel
             if (markerRenderer != null)
                 markerRenderer.material.color = isAtPelvis ? insideColor : outsideColor;
 
-            // 이미 하강 가능 상태면 캘리브레이션 확인은 더 필요 없음
-            if (descent.CanDescend)
+            // 준비 단계가 지났으면 캘리브레이션 확인은 더 필요 없음
+            if (stateMachine.State != RappelState.Ready)
                 return;
 
             gripValue = gripAction.action != null ? gripAction.action.ReadValue<float>() : 0f;
 
-            if (isAtPelvis && gripValue >= requiredGrip)
-            {
-                descent.CanDescend = true;
-                Debug.Log("[Rappel] 골반 그립 확인 → 하강 가능");
-            }
+            if (isAtPelvis && gripValue >= requiredGrip && stateMachine.Calibrate() && haptic != null)
+                haptic.SendHapticImpulse(hapticAmplitude, hapticDuration);
         }
 
         Vector3 GetPelvisPosition()

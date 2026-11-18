@@ -1,0 +1,2 @@
+These old files are kept here so existing projects do not break upon updating, as required by Unity Asset Store rules. 
+This folder can be safely deleted if starting a fresh project or if these specific files are not in use.
