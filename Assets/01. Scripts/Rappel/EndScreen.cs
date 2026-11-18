@@ -5,21 +5,23 @@ using UnityEngine.SceneManagement;
 namespace Rappel
 {
     // 종료가 되면 결과 패널을 켜고 "성공"/"실패" 글자를 보여 줌
-    // 버튼은 Inspector에서 Button의 On Click에 Retry(), GoToMenu()를 연결
-    // 이 스크립트는 켜져 있는 오브젝트(예: 캔버스)에 붙이고, panel은 처음에 꺼 둠
     public class EndScreen : MonoBehaviour
     {
         [Header("연결")]
         [SerializeField] private RappelStateMachine stateMachine;
-        [SerializeField] private GameObject panel;          // 결과 화면 (처음엔 꺼 둠)
-        [SerializeField] private TMP_Text resultText;       // "성공"/"실패"를 쓸 글자
+        [SerializeField] private GameObject panel;
+        [SerializeField] private TMP_Text resultText;
+        [SerializeField] private GameObject nextButton;
 
         [Header("문구")]
         [SerializeField] private string successMessage = "성공";
         [SerializeField] private string failMessage = "실패";
 
+        [Header("표시")]
+        [SerializeField] private float showDelay = 0f;
+
         [Header("씬 이동")]
-        [SerializeField] private string menuSceneName = "Menu";   // Build Settings에 등록된 메뉴 씬 이름
+        [SerializeField] private string menuSceneName = "Menu";
 
         void Awake()
         {
@@ -47,8 +49,32 @@ namespace Rappel
             if (resultText != null)
                 resultText.text = stateMachine.Succeeded ? successMessage : failMessage;
 
+            if (nextButton != null)
+                nextButton.SetActive(stateMachine.Succeeded);
+
+            if (showDelay > 0f)
+                Invoke(nameof(ShowPanel), showDelay);
+            else
+                ShowPanel();
+        }
+
+        private void ShowPanel()
+        {
             if (panel != null)
                 panel.SetActive(true);
+        }
+
+        // 버튼: 다음 스테이지 (Build Settings 다음 번호 씬). 마지막 씬이면 메뉴로
+        public void NextStage()
+        {
+            int next = SceneManager.GetActiveScene().buildIndex + 1;
+            if (next <= 0 || next >= SceneManager.sceneCountInBuildSettings)
+            {
+                GoToMenu();
+                return;
+            }
+
+            SceneManager.LoadScene(next);
         }
 
         // 버튼: 지금 씬 다시 시작

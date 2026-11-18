@@ -33205,10 +33205,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: RappelRig
       objectReference: {fileID: 0}
-    - target: {fileID: 7294346828575835858, guid: 7159aea050c8fac4bb82b2a96df7fbb1, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -1.967
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -75,6 +75,16 @@ namespace Rappel
                 stateMachine.Finish(true);
         }
 
+        // 창문 바로 위/아래로 돌아왔을 때 창문 쪽에서 부름 (너무 높거나 낮음 → 실패)
+        public void NotifyWindowMissed()
+        {
+            if (stateMachine == null)
+                return;
+
+            if (stage == StageType.Window || stage == StageType.Mission)
+                stateMachine.Finish(false);
+        }
+
         private void OnStateChanged(RappelState prev, RappelState next)
         {
             if (next == RappelState.Jumping)
