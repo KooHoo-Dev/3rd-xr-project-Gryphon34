@@ -1,5 +1,5 @@
 Rappel VR 프로젝트를 이어서 진행할게. 프로젝트 정보, 일정은 CLAUDE.md에 있으니 먼저 읽어 줘. 기획서(Assets/02. Docs/Rappel — 컨셉 기획서.pdf)도 읽어 줘.
-단, CLAUDE.md는 11/18(수) 12:15 기준이라 아래 내용이 더 최신이야.
+단, CLAUDE.md는 11/18(수) 22:54 기준이라 아래 내용이 더 최신이야. 특히 마감이 바뀌었어 (아래 "마감" 참고).
 
 ## 작업 규칙
 * 모든 답변은 한국어로, Unity 용어는 쉽게 풀어서 설명해 줘.
@@ -8,73 +8,78 @@ Rappel VR 프로젝트를 이어서 진행할게. 프로젝트 정보, 일정은
 * 스크립트는 내가 요청할 때만 만들거나 수정해 줘. "시작하자" 같은 말은 코드 작성 허락이 아니야. 내가 "다음 할 일"을 물으면 할 일만 알려 줘.
 * Unity가 보통 켜져 있으니 .unity 씬 파일이나 ProjectSettings를 직접 수정하지 마. 에디터 작업은 단계별로 안내만 해 줘.
 * UI처럼 에디터에서 손으로 만들기 번거로운 건, 내가 메뉴를 클릭하면 만들어지는 에디터 툴(Editor 폴더 스크립트)로 만들어 줘.
-* 씬 상태(위치, 스케일, 연결)를 말하기 전에 저장된 씬 파일(Assets/00. Scene/*.unity, RappelRig.prefab)을 직접 확인해 줘. CLAUDE.md나 예전 대화만 보고 말하지 마.
+* 씬 상태(위치, 스케일, 연결)를 말하기 전에 저장된 씬 파일(Assets/00. Scene/*.unity, RappelRig.prefab, City.prefab)을 직접 확인해 줘. CLAUDE.md나 예전 대화만 보고 말하지 마.
 * 내가 코드를 이해 못 하면 쉬운 말 + 예시(표, 머메이드)로 설명해 줘.
 * 커밋은 내가 할게.
 * (11/19 추가) 지금은 기능 개발에만 집중. 빌드/정리 얘기는 내가 물을 때만.
 
-## 11/19(목) 01:20 기준 진행 상황
-### 끝난 것 (Link 테스트 완료)
-* 01 하강, 02 점프: 성공/실패 판정, 종료 화면, 다시 하기
-* 안내창(튜토리얼): 시작하면 바로 뜸, 왼손 Y로 켜고 끄기, 상태별 "지금 할 일" 문구
-* 종료 화면 "다음 스테이지" 버튼 (성공 때만)
-* 창문 진입 (04, 05): 판정 + 유리 깨짐 + 진입 순간 속도로 방 안으로 들어가 바닥에 섬 + 2초 뒤 결과 화면
-* 메뉴 씬 (Menu.unity) + Build Settings 6개 등록 (Menu 0번, 01~05 = 1~5번)
-* 씬별 XR Origin 시작 위치: 사용자가 끝냄 ("이대로 둠")
+## 마감 (11/20 새벽 사용자 확인, CLAUDE.md보다 최신)
+* **1차 빌드 + 시연 영상 제출: 11/23(월). 마감은 이것 하나뿐.**
+* CLAUDE.md의 "11/20(금) 9시 발표", "11/19 13시 기능 동결", 날짜별 일정은 낡음 (아직 안 고침)
 
-### 스크립트 (Assets/01. Scripts/Rappel/)
-* 11/18 커밋분(상태머신, 하강, 제동, 고정, 점프, 햅틱, 로프, 8자고리)은 안 바뀜. 설명은 CLAUDE.md + 아래
-  - RappelStateMachine 상태: Ready, OnWall, Locked, GunDrawn, Jumping, Finished. DrawGun/HolsterGun은 아직 부르는 곳 없음
-  - RappelJump 프리팹 값: jumpDistance 2, jumpDuration 2 (사용자가 바꿈. 코드 기본값 1 / 1.5)
-  - X 점프는 왼손이 8자고리 0.2m 안일 때만 (코드/프리팹 확인함. 사용자는 "아무 때나 됐다"고 함, 원인 확인 안 함)
-* StageRule.cs: NotifyWindowMissed() 추가 (Window/Mission이면 Finish(false))
-* EndScreen.cs
-  - nextButton: 성공일 때만 켬. NextStage(): buildIndex + 1, 마지막이면 GoToMenu()
-  - showDelay(기본 0): 종료 후 이 시간 뒤 패널 켬(Invoke). 프리팹 0, 04/05 씬에서만 2로 덮어씀
-* StageGuide.cs (새, GuideCanvas): 시작 때 Show(). 왼손 Y(<XRController>{LeftHand}/{SecondaryButton}, 스크립트에서 직접 만든 입력)로 켜고 끔. 자동 닫힘 없음
-  - 띄우는 순간 머리 기준 왼쪽 35°, 0.6m, -0.1m에 놓고 그 뒤로 안 따라감 (XR Origin 자식이라 몸과 같이 내려감)
-  - 문구 = 제목 "스테이지 N · 이름"(N = StageType + 1) + 목표 한 줄(StageType별) + 지금 할 일(StageType × 상태, StateChanged로 갱신) + "왼손 Y 버튼: 이 창 켜기 / 끄기"(120%, 노란색)
-  - 사용자 수정 반영: "그립 꽉" → "그립", 점프 키 "(왼손 8자고리 + X도 가능)", 점프 스테이지는 벽/점프 중 같은 전체 문구("2초 뒤 벽으로 돌아옴")
-  - stageRule, stateMachine 비우면 씬에서 찾음
-* WindowEntry.cs (새, 04/05 씬의 WindowEntry 오브젝트, 실행 순서 1)
-  - Jumping → OnWall 순간 한 번 판정(이벤트에선 표시만, Update에서 판정). 머리를 이 오브젝트 위치/회전 기준으로 봄(스케일 무시)
-  - 창문 안(width × height) → glass.FragAll() + NotifyWindowEntered() + 방 안 이동 / 위아래 failMargin 안 → NotifyWindowMissed() / 그 밖, 옆, depth 밖 → 아무 일 없음
-  - 방 안 이동: 진입 순간 속도(직전 프레임 XR Origin 이동량) → 수평은 horizontalDrag로 감속(벽 쪽 속도 < minEnterSpeed면 그 값으로), 바닥보다 높으면 중력, 낮으면 climbSpeed로 올라옴 → floorPoint Y에 섬
-  - Scene 창 기즈모: 초록 = 성공 범위, 빨강 = 실패 띠
-* MenuScreen.cs (새, MenuCanvas): LoadStage(buildIndex)
-* Editor
-  - EndScreenBuilder: 버튼 3개(다시 하기 | 메뉴 | 다음 스테이지)로 만듦 + "종료 화면에 다음 스테이지 버튼 추가" 메뉴. CreateUI/Stretch/CreateButton/EnsureEventSystem/KoreanFontPath를 internal로 열어 다른 툴이 씀
-  - StageGuideBuilder: Tools > Rappel > 안내창 만들기 (0.5 × 0.6m, 본문 자동 글자 크기 16~26)
-  - MenuBuilder: Tools > Rappel > 메뉴 화면 만들기 (원점 앞 1.2m, 높이 1.5m, 0.8 × 0.9m, 제목 + 스테이지 버튼 5개 → LoadStage(1~5))
-* 실행 순서: Figure8Follow(-100) → HandBrake(-60) → BrakeManager(-50) → RappelDescent(0), RappelJump(0) → WindowEntry(1) → StageRule(5) → DescentHaptics(10) → RopeLine, Figure8Follow(LateUpdate)
+## 11/20(금) 02:25 기준 진행 상황
+### 끝난 것 (사용자 확인)
+* 01~05 스테이지 + 메뉴, 사격(03/05), 창문 진입(04/05), 안내창, 종료 화면 (이전 세션까지)
+* 11/20 빌드 테스트 완료 (커밋 a07158d7 "빌드 테스트" 02:23). 사용자: "수치만 조절하면 됨"
+* 건물 교체: Synty PolygonPoliceStation으로 만든 City 프리팹을 5개 씬에 배치, 바닥 높이 18.238
+* 사용자가 확인 완료라고 한 것: 창문 정면 노출(고정 거절 진동, 1.5초 뒤 발각 실패, 표적 다 맞히면 꺼짐), 실패 이유 문구, UI 안 가려짐(한글 포함), 소리(발소리, 점프, 바람, 유리, 도시), 05 유리 소리
 
-### 씬 연결 (저장 기준: 01 11/18 23:54, 02 22:54, 03 11/19 01:13, 04/05 01:15, Menu 01:08, RappelRig 11/18 23:54)
-* RappelRig 프리팹에 GuideCanvas, EndScreenCanvas(NextButton 연결) 들어 있음
-* 04, 05 WindowEntry: Glass, FloorPoint 연결됨. width 4.94, height 1.36, failMargin 0.81, minEnterSpeed 1, horizontalDrag 1, climbSpeed 2. EndScreen showDelay 2 (씬 덮어쓰기)
-* Menu: XR Origin (XR Rig) 프리팹, Tracking Origin = Device, Camera Y Offset 1.6, 프리팹 안 오브젝트 하나 꺼짐(Locomotion으로 보임, 이름 확인 안 함), MenuCanvas, Event System 있음
-* 03 SideScene: SM_Env_Wall_Interior_Window_03 하나가 지워짐 (의도인지 확인 안 함). 03/05에 "목표 지점"과 표적 아직 없음
+### 스크립트 변경 (Assets/01. Scripts/Rappel/) — 이번 세션
+* **WindowExposure.cs (새, 03/05 표적 창문마다, 실행 순서 -70)**
+  - 머리가 창문 정면 범위(width × height × 앞뒤 depth, 창문 기준 회전) 안이면
+    - A: 상태머신에 SetLockBlocked(this, true) → 벽→고정 거절, 거절 순간(LockRefused) 양손 진동 0.6 / 0.3초
+    - B: (OnWall이고 하강 속도 < stopSpeed 0.3) 또는 Locked/GunDrawn 상태로 exposeLimit 1.5초 머물면 StageRule.NotifyExposed() → 실패. 머무는 동안 0.25초마다 경고 진동 0.2→0.8
+  - Ready/Finished면 범위 밖 취급. 점프 중이나 빠르게 지나가면 노출 아님
+  - 씬 표적을 다 맞히면(StageRule.AllTargetsHit) 스스로 꺼짐 (OnDisable에서 막음 해제)
+  - Scene 창 기즈모: 주황 상자. 연결 칸 비우면 씬에서 찾음 (Haptic 칸은 직접 연결)
+* **RappelStateMachine.cs (구조 변경)**: SetLockBlocked(Object, bool) + IsLockBlocked + LockRefused 이벤트 추가. 막혀 있으면 OnWall→Locked만 거절 (고정 풀기는 항상 됨)
+* **StageRule.cs**: Finish 직접 호출을 End(성공, 이유)로 바꿈 (이유를 먼저 정하고 Finish, 거절되면 이유 되돌림). EndReason, AllTargetsHit 공개. NotifyExposed() 추가(SideWatch/Mission만). NotifyWindowMissed(bool tooHigh)로 바뀜
+  - 실패 이유 문구: 너무 빨리 내려갔습니다 (x.x m/s) / 착지가 너무 빨랐습니다 (x.x m/s) / 점프를 한 번도 안 했습니다 / 표적을 다 못 맞혔습니다 (n / m) / 창문 정면에 너무 오래 멈춰 발각됐습니다 / 창문보다 너무 높았습니다·낮았습니다 / 창문을 지나쳐 바닥까지 내려갔습니다 / 표적이 남은 채 진입했습니다 (n / m). 성공이면 이유 없음
+* **EndScreen.cs**: 결과 글자 아래 줄에 `<size=reasonFontSize(40)>이유</size>` 붙임. stageRule 칸 비우면 씬에서 찾음 (프리팹이라 연결 불가)
+* **WindowEntry.cs**: glassBreakClip, glassBreakVolume(1) 추가. 진입 성공 때 AudioSource.PlayClipAtPoint(창문 위치). NotifyWindowMissed(local.y > 0) 호출
+* **StageGuide.cs**: 03/05 벽 문구에 "창문 정면에선 고정 안 됨, 멈추면 발각(실패)" 추가, "목표 지점" → "표적 창문 옆 벽"
+* **RappelSounds.cs (새, RappelRig의 XR Origin, 실행 순서 10)**
+  - 발소리: OnWall + 하강 속도 ≥ 0.05일 때 stepDistance 0.5m마다(최소 간격 0.3초), 클립 랜덤 + 음높이 0.9~1.1
+  - 점프: OnWall→Jumping = jumpClip, Jumping→OnWall = wallLandClip
+  - 로프 마찰음: ropeLoopClip 반복, 음량 = 0.7 × (속도/3), 음높이 0.8→1.2
+  - AudioSource 칸 비우면 시작 때 2D 스피커 2개를 만듦
+* **UIAlwaysOnTop.cs + UIOverlay.shader (새)**: 캔버스에 붙이면 Awake에서 이미지 재질 → "Rappel/UI Overlay"(UI/Default + ZTest Always), TMP 글자 → "TextMeshPro/Mobile/Distance Field Overlay", Canvas sortingOrder 100. Reset에서 셰이더 칸 자동 채움
+* **Editor/CityOptimizer.cs (새)**: Tools > Rappel > City 프리팹 최적화. City.prefab 모든 오브젝트 Static(Batching + Occludee, 렌더러 긴 변 ≥ 2m면 Occluder) + 그림자 지기/받기 끔 → 저장
+* 실행 순서: Figure8Follow(-100) → WindowExposure(-70) → HandBrake(-60) → BrakeManager(-50) → RappelDescent(0), RappelJump(0), Gun(0) → WindowEntry(1) → GunHolster(2) → StageRule(5) → DescentHaptics(10), RappelSounds(10) → RopeLine, Figure8Follow(LateUpdate)
+
+### 씬 연결 (저장 기준: 01 02:18, 02 00:40, 03 02:21, 04 01:32, 05 02:21, RappelRig 01:36, City 01:31, Menu 11/19 01:08)
+* RappelRig: 맨 위 Y 0, XR Origin Y 약 49 (씬 덮어쓰기). groundY(RappelDescent, RopeLine)는 씬마다 덮어씀
+  - 01 18.23838 / 02, 04, 05 18.2383 / **03은 RopeLine 18, RappelDescent 18.2383 (서로 다름)**
+* RappelRig 안: UIAlwaysOnTop 2개(GuideCanvas, EndScreenCanvas, 셰이더 칸 채워짐), RappelSounds(발소리 10개, 점프, 벽 착지 연결, **ropeLoopClip 비어 있음**), Wind AudioSource(Wind.mp3, Loop), XR Origin에 클립 없는 AudioSource 2개(Play On Awake 켜짐)
+* City.prefab: Static 적용됨, 도시 소리 AudioSource 1개(km007-city-ambience, Loop, 3D, Linear, Max 50)
+* 03 WindowExposure: 2.39 × 3.67, depth 1.5, 양손 Haptic 연결
+* 05 WindowExposure: 4.58 × 3.98, depth 1.5, 양손 Haptic 연결 / WindowEntry: 4.6 × 1.98, failMargin 0.48, depth 1.5, 유리 소리 연결
+* 04 WindowEntry: 4.66 × 1.87, failMargin 0.54, depth 1.69, 유리 소리 연결
+* 5개 씬 모두 OcclusionCullingData 있음 (오클루전 굽기 됨)
 
 ### 알아둘 사실
-* 04/05 씬에서 RappelRig "Apply All" 금지 (showDelay 2가 프리팹으로 퍼짐)
-* GuideCanvas 프리팹에 예전 칸 autoHideTime 값이 남아 있음 (코드에서 지워서 무시됨, 문제 없음)
-* 안내창 사격/측면 경계 문구는 확답 안 받은 사격 기본값 기준 → 사격 구조 정하면 문구도 맞춰야 함
-* 고소감: "건물만 허공에 떠 있어서 안 무섭다" → 사격 끝나고 주변 채우기(옆 건물 복제, 도로/인도, 경찰차/SWAT 밴/사람, 헬기, Fog)를 하기로 함. 코드 없음. 소품은 City 프리팹 하나로 묶어 5개 씬에 넣기, Static 체크. 나무/가로등/배경 건물/스카이박스는 프로젝트에 없음
-* 소리 파일 없음 (줄 마찰음, 착지음, 총소리, 바람)
-* APK 실기기 확인은 11/17 이후 못 함 (메뉴, 레이저 버튼, 안내창, 창문 진입 포함)
-* 커밋 안 된 변경: 스크립트 8개(새 4 + 수정 4, Editor 포함), 씬 01/03/04/05, Menu.unity(새), RappelRig.prefab, EditorBuildSettings, NotoSansKR SDF, OpenXRPackageSettings
-* 메모리 rappel-tutorial-plan은 메모리 폴더에 없음 (튜토리얼은 이제 구현됨)
-* CLAUDE.md에서 낡은 부분: 씬 이름(00. TestScene), 스테이지 5개/메뉴/StageRule/EndScreen/StageGuide/WindowEntry/GunDrawn 없음, 일정과 자를 순서가 범위 변경 전 기준
+* 커밋 안 된 변경 없음 (02:23 커밋 이후 git status 깨끗)
+* 로프 소리 없음: RappelSounds의 Rope Loop Clip 칸이 비어 있음 (소리 파일은 사용자가 찾기로 함)
+* 프레임이 좀 끊기는 것 같다고 함 → 실기기에서 OVR Metrics Tool(FPS, GPU/CPU %, Stale Frames) 또는 `adb logcat -s VrApi`로 확인하기로 함. 아직 수치 없음
+* CityOptimizer는 창문 유리(별도 렌더러, Glass_01)도 2m 넘으면 Occluder로 지정함 → 오클루전 굽기 후 유리 너머 방 안이 안 보일 수 있음. 사용자가 "괜찮아"로 그대로 둠 (증상 나면 City 안 Glass 오브젝트의 Occluder Static만 끄고 다시 굽기)
+* 건물 그림자 없음 (CityOptimizer가 끔)
+* Synty 재질(Generic_Basic 셰이더그래프)에 알파 클립이 켜져 있음 (Quest에서 조금 비쌈). 안 건드림
+* WindowExposure는 05 진입 창문(WindowEntry 창문)에 두면 안 됨 (진입하려면 멈춰야 해서 발각됨)
+* 창문 진입 순간 벽 착지 소리 + 유리 소리가 같이 남 (둘 다 Jumping→OnWall 순간)
+* RappelSounds 발소리/점프는 같은 스피커라 음높이 바꿀 때 겹친 소리 음높이도 살짝 바뀜
+* 04/05 씬에서 RappelRig "Apply All" 금지 (showDelay 2, groundY, 위치 덮어쓰기가 프리팹으로 퍼짐)
+* 바닥 착지음(기획서 필수 피드백) 아직 없음. RappelDescent.Landed 이벤트 있음
+* 비네트(기획서 "멀미와 안전") 아직 없음
+* 사용자는 X 점프가 "아무 때나 됐다"고 했음 (원인 확인 안 함)
+* Unity Inspector의 SerializedObjectNotCreatableException / MissingReferenceException은 에디터 내부 메시지 (선택한 오브젝트가 사라졌을 때). 게임 영향 없음
+* CLAUDE.md에서 낡은 부분: 마감/일정/기능 동결/자를 순서, 씬 이름(00. TestScene), 스테이지 5개·메뉴·StageRule·EndScreen·StageGuide·WindowEntry·WindowExposure·사격·사운드·City 없음, 착지 높이(groundY 0)
 
-## 다음 할 일 (목 11/19, 13시 기능 동결)
-1. 사격 구조 확정 (사용자가 아침에 정함). 정할 것:
-   - 총 꺼내기/넣기 (기본값: 고정 중 오른손 골반 + 그립 토글, PelvisCheck 재사용)
-   - 사격 (기본값: 총 든 상태 오른손 트리거 → 총구 레이 → 표적 사라짐 + GunShot_Smoke_FX, 총 SM_Wep_PistolSwat_01)
-   - 총 위치(컨트롤러에 붙일지, 컨트롤러 모델 숨길지), 표적 개수/모양/위치, 03/05 목표 지점(표시만 / 그 높이에서 표적 등장)
-   - (11/19 01:30 결정) 05 임무에도 측면 경계 중 표적 사격을 넣음. 지금 05는 StageRule 규칙상 창문 진입만 하면 성공(표적 안 봄)
-   - 아직 안 정함: 05에서 표적을 다 안 맞히고 창문에 들어가면 실패로 할지 (정하면 StageRule.NotifyWindowEntered에 allTargetsHit 조건 추가)
-2. 사격 스크립트 작성 + 03/05 배치 + 안내 문구 맞추기
-3. 주변 채우기 (옆 건물, 바닥 소품, Fog)
-4. 사운드 (파일 구하기부터)
-5. APK 실기기 확인 + 백업, 시연 영상, CLAUDE.md 갱신
-* CLAUDE.md 기준 사격은 "11시까지 안 되면 자름". 사용자는 사격 → 주변 채우기 → 사운드 순서로 하기로 함
-* 오늘 완료 기준: 사격 동작(03에서 표적 다 맞히고 착지 → 성공) + 기능 동결 전 APK 백업
+## 다음 할 일 (11/20 ~ 11/23 제출)
+1. 수치 조절 (사용자 진행 중)
+2. 로프 소리 파일 구해서 Rope Loop Clip에 연결
+3. 실기기 프레임 측정 (OVR Metrics Tool) → 떨어지는 곳 찾기
+4. 기획서 필수 남은 것: 바닥 착지음 (구조는 사용자가 정함)
+5. 여유 있으면: 비네트
+6. 최종 APK 백업, 시연 영상 녹화 + 편집, CLAUDE.md 갱신
+* 밀리면 자르는 순서는 CLAUDE.md "자를 순서" 기준이었으나 마감이 바뀌어서 사용자와 다시 정해야 함 (확인 안 함)
+* 완료 기준: 11/23까지 끊김 없는 APK + 시연 영상 제출
