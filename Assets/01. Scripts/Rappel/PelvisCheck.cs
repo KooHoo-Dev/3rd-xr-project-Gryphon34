@@ -23,6 +23,9 @@ namespace Rappel
 
         private Renderer markerRenderer;
 
+        // 오른손이 지금 골반 반경 안에 있는지 (GunHolster가 총 꺼내기/넣기에 씀)
+        public bool IsAtPelvis => isAtPelvis;
+
         [Header("그립")]
         [Range(0f, 1f)]
         [SerializeField] private float requiredGrip = 1f;

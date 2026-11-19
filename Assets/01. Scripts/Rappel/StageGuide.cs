@@ -150,7 +150,8 @@ namespace Rappel
                 case StageType.Descent:   return "천천히 내려가 착지\n(2 m/s 넘으면 실패)";
                 case StageType.Jump:      return "점프 한 번 이상 하고 착지";
                 case StageType.SideWatch: return "목표 지점에서 표적 모두 맞히고 착지";
-                default:                  return "창문으로 진입\n(놓치고 착지하면 실패)";
+                case StageType.Window:    return "창문으로 진입\n(놓치고 착지하면 실패)";
+                default:                  return "표적 모두 맞히고 창문으로 진입\n(하나라도 남기면 실패)";
             }
         }
 
@@ -160,8 +161,8 @@ namespace Rappel
         private const string JumpKey   = "A 버튼 = 점프\n(왼손 8자고리 + X도 가능)";
         private const string LockKey   = "오른손 8자고리 + 그립 + 트리거";
         private const string Unlock    = "고정 중엔 내려가지도, 점프하지도 않음\n" + LockKey + " = 고정 풀기";
-        private const string WatchLock = "몸을 옆으로 돌려 표적 찾기\n오른손 골반 + 그립 = 총 꺼내기\n다 맞히면 " + LockKey + " = 고정 풀기";
-        private const string GunDrawn  = "트리거 = 사격\n오른손 골반 + 그립 = 총 넣기";
+        private const string WatchLock = "몸을 옆으로 돌려 표적 찾기\n오른손 골반에서 그립 다시 쥐기 = 총 꺼내기\n다 맞히면 " + LockKey + " = 고정 풀기";
+        private const string GunDrawn  = "트리거 = 사격\n총을 골반에 대고 그립 놓기 = 총 넣기\n(총을 넣어야 고정 풀기 가능)";
         private const string WindowJump = "벽으로 돌아올 때 창문 앞이면 진입\n그립 = 높이 유지";
 
         // 지금 상태에서 할 일 (짧게 2~4줄)
