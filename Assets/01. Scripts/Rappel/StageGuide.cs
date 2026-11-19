@@ -161,7 +161,8 @@ namespace Rappel
         private const string JumpKey   = "A 버튼 = 점프\n(왼손 8자고리 + X도 가능)";
         private const string LockKey   = "오른손 8자고리 + 그립 + 트리거";
         private const string Unlock    = "고정 중엔 내려가지도, 점프하지도 않음\n" + LockKey + " = 고정 풀기";
-        private const string WatchLock = "몸을 옆으로 돌려 표적 찾기\n오른손 골반에서 그립 다시 쥐기 = 총 꺼내기\n다 맞히면 " + LockKey + " = 고정 풀기";
+        private const string Exposure  = "창문 정면에선 고정 안 됨, 멈추면 발각(실패)";
+        private const string WatchLock = "몸을 옆으로 돌려 창문 안 표적 찾기\n오른손 골반에서 그립 다시 쥐기 = 총 꺼내기\n다 맞히면 " + LockKey + " = 고정 풀기";
         private const string GunDrawn  = "트리거 = 사격\n총을 골반에 대고 그립 놓기 = 총 넣기\n(총을 넣어야 고정 풀기 가능)";
         private const string WindowJump = "벽으로 돌아올 때 창문 앞이면 진입\n그립 = 높이 유지";
 
@@ -191,7 +192,7 @@ namespace Rappel
                     {
                         case RappelState.Locked:   return WatchLock;
                         case RappelState.GunDrawn: return GunDrawn;
-                        default:                   return "목표 지점까지 내려가기\n도착하면 " + LockKey + " = 고정";
+                        default:                   return "표적 창문 옆 벽까지 내려가기\n도착하면 " + LockKey + " = 고정\n" + Exposure;
                     }
 
                 case StageType.Window:
@@ -209,7 +210,7 @@ namespace Rappel
                         case RappelState.GunDrawn: return GunDrawn;
                         case RappelState.Jumping:  return WindowJump;
                         default:
-                            return "1. 목표 지점에서 고정 → 경계, 사격\n2. 고정 풀고 창문 높이까지\n3. A 점프로 창문 진입";
+                            return "1. 표적 창문 옆 벽에서 고정 → 경계, 사격\n2. 고정 풀고 진입 창문 높이까지\n3. A 점프로 창문 진입\n" + Exposure;
                     }
             }
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Rappel
@@ -35,6 +36,22 @@ namespace Rappel
         // 종료로 바뀔 때는 Succeeded가 먼저 정해진 뒤에 보냄
         public event Action<RappelState, RappelState> StateChanged;
 
+        // 고정을 막는 곳 (창문 정면 범위 WindowExposure). 하나라도 막고 있으면 벽 → 고정이 거절됨
+        private readonly HashSet<UnityEngine.Object> lockBlockers = new HashSet<UnityEngine.Object>();
+        public bool IsLockBlocked => lockBlockers.Count > 0;
+
+        // 막힌 곳에서 고정을 시도해 거절된 순간 한 번 (경고 진동 등에 사용)
+        public event Action LockRefused;
+
+        // 막는 쪽이 매 프레임 "지금 막음 / 안 막음"을 알려 줌
+        public void SetLockBlocked(UnityEngine.Object blocker, bool blocked)
+        {
+            if (blocked)
+                lockBlockers.Add(blocker);
+            else
+                lockBlockers.Remove(blocker);
+        }
+
         // 준비 → 벽 (PelvisCheck)
         public bool Calibrate()
         {
@@ -46,10 +63,17 @@ namespace Rappel
         }
 
         // 벽 ↔ 고정 (HandBrake). 점프 중, 총 든 상태, 준비, 종료에는 안 됨
+        // 창문 정면처럼 막힌 곳에서는 벽 → 고정이 안 됨 (고정 풀기는 언제나 됨)
         public bool ToggleLock()
         {
             if (state == RappelState.OnWall)
             {
+                if (IsLockBlocked)
+                {
+                    LockRefused?.Invoke();
+                    return false;
+                }
+
                 ChangeState(RappelState.Locked);
                 return true;
             }

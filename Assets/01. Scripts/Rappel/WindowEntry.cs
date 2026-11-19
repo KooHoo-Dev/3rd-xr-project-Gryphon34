@@ -30,6 +30,10 @@ namespace Rappel
         [SerializeField] private float gravity = 9.81f;
         [SerializeField] private float climbSpeed = 2f;
 
+        [Header("유리 깨지는 소리 (비우면 안 남)")]
+        [SerializeField] private AudioClip glassBreakClip;
+        [SerializeField] private float glassBreakVolume = 1f;
+
         [Header("디버그 (읽기용)")]
         [SerializeField] private Vector3 lastHeadLocal;
         [SerializeField] private string lastResult;
@@ -127,13 +131,16 @@ namespace Rappel
                 lastResult = "진입 성공";
                 if (glass != null)
                     glass.FragAll();
+                // 창문 가운데(이 오브젝트 위치)에서 3D 소리로 한 번
+                if (glassBreakClip != null)
+                    AudioSource.PlayClipAtPoint(glassBreakClip, transform.position, glassBreakVolume);
                 stageRule.NotifyWindowEntered();
                 StartMove(frameVelocity);
             }
             else
             {
                 lastResult = local.y > 0f ? "너무 높음 (실패)" : "너무 낮음 (실패)";
-                stageRule.NotifyWindowMissed();
+                stageRule.NotifyWindowMissed(local.y > 0f);
             }
         }
 

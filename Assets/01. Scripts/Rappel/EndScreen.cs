@@ -4,11 +4,12 @@ using UnityEngine.SceneManagement;
 
 namespace Rappel
 {
-    // 종료가 되면 결과 패널을 켜고 "성공"/"실패" 글자를 보여 줌
+    // 종료가 되면 결과 패널을 켜고 "성공"/"실패" 글자 + 그 아래 종료 이유(StageRule.EndReason, 실패일 때)를 보여 줌
     public class EndScreen : MonoBehaviour
     {
         [Header("연결")]
         [SerializeField] private RappelStateMachine stateMachine;
+        [SerializeField] private StageRule stageRule;              // 종료 이유를 읽음 (비우면 씬에서 찾음)
         [SerializeField] private GameObject panel;
         [SerializeField] private TMP_Text resultText;
         [SerializeField] private GameObject nextButton;
@@ -16,6 +17,7 @@ namespace Rappel
         [Header("문구")]
         [SerializeField] private string successMessage = "성공";
         [SerializeField] private string failMessage = "실패";
+        [SerializeField] private float reasonFontSize = 40f;   // 결과 아래 이유 줄 글자 크기
 
         [Header("표시")]
         [SerializeField] private float showDelay = 0f;
@@ -27,6 +29,8 @@ namespace Rappel
         {
             if (panel != null)
                 panel.SetActive(false);
+            if (stageRule == null)
+                stageRule = FindFirstObjectByType<StageRule>();
         }
 
         void OnEnable()
@@ -47,7 +51,13 @@ namespace Rappel
                 return;
 
             if (resultText != null)
-                resultText.text = stateMachine.Succeeded ? successMessage : failMessage;
+            {
+                string text = stateMachine.Succeeded ? successMessage : failMessage;
+                string reason = stageRule != null ? stageRule.EndReason : "";
+                if (!string.IsNullOrEmpty(reason))
+                    text += $"\n<size={reasonFontSize}>{reason}</size>";
+                resultText.text = text;
+            }
 
             if (nextButton != null)
                 nextButton.SetActive(stateMachine.Succeeded);

@@ -32,8 +32,10 @@ namespace Rappel
         [SerializeField] private int targetCount;    // 씬에 있는 표적 수 (Target이 시작할 때 알려 줌)
         [SerializeField] private int hitCount;       // 맞힌 표적 수
         [SerializeField] private bool allTargetsHit;
+        [SerializeField] private string endReason;   // 종료 이유 (종료 화면에 표시. 성공이면 비어 있음)
 
         public StageType Stage => stage;
+        public string EndReason => endReason;
 
         void OnEnable()
         {
@@ -58,11 +60,24 @@ namespace Rappel
 
             // 하강 연습: 한 번이라도 너무 빠르면 바로 실패
             if (stage == StageType.Descent && descent.DescentSpeed > failSpeed)
-                stateMachine.Finish(false);
+                End(false, $"너무 빨리 내려갔습니다 ({descent.DescentSpeed:0.0} m/s)");
         }
+
+        // 이유를 정하고 종료 요청. 종료가 거절되면(이미 종료 등) 이유도 그대로 둠
+        // (종료 화면이 StateChanged에서 이유를 읽으므로 Finish 전에 정해 둠)
+        private void End(bool success, string reason)
+        {
+            string prev = endReason;
+            endReason = reason;
+            if (!stateMachine.Finish(success))
+                endReason = prev;
+        }
+
+        private string TargetScore => $"({hitCount} / {targetCount})";
 
         public int TargetCount => targetCount;
         public int HitCount => hitCount;
+        public bool AllTargetsHit => allTargetsHit;
 
         // 표적이 시작할 때 하나씩 부름 (표적 개수 세기)
         public void RegisterTarget()
@@ -87,19 +102,29 @@ namespace Rappel
                 return;
 
             if (stage == StageType.Window)
-                stateMachine.Finish(true);
+                End(true, "");
             else if (stage == StageType.Mission)
-                stateMachine.Finish(allTargetsHit);
+                End(allTargetsHit, allTargetsHit ? "" : $"표적이 남은 채 진입했습니다 {TargetScore}");
         }
 
         // 창문 바로 위/아래로 돌아왔을 때 창문 쪽에서 부름 (너무 높거나 낮음 → 실패)
-        public void NotifyWindowMissed()
+        public void NotifyWindowMissed(bool tooHigh)
         {
             if (stateMachine == null)
                 return;
 
             if (stage == StageType.Window || stage == StageType.Mission)
-                stateMachine.Finish(false);
+                End(false, tooHigh ? "창문보다 너무 높았습니다" : "창문보다 너무 낮았습니다");
+        }
+
+        // 창문 정면에 오래 머물렀을 때 창문 쪽(WindowExposure)에서 부름 (발각 → 실패)
+        public void NotifyExposed()
+        {
+            if (stateMachine == null)
+                return;
+
+            if (stage == StageType.SideWatch || stage == StageType.Mission)
+                End(false, "창문 정면에 너무 오래 멈춰 발각됐습니다");
         }
 
         private void OnStateChanged(RappelState prev, RappelState next)
@@ -114,15 +139,28 @@ namespace Rappel
                 return;
 
             bool success;
+            string reason;
             switch (stage)
             {
-                case StageType.Descent:   success = impactSpeed <= failSpeed; break;
-                case StageType.Jump:      success = hasJumped;                break;
-                case StageType.SideWatch: success = allTargetsHit;            break;
-                default:                  success = false;                    break;   // 창문, 임무: 착지 = 창문을 놓침
+                case StageType.Descent:
+                    success = impactSpeed <= failSpeed;
+                    reason = $"착지가 너무 빨랐습니다 ({impactSpeed:0.0} m/s)";
+                    break;
+                case StageType.Jump:
+                    success = hasJumped;
+                    reason = "점프를 한 번도 안 했습니다";
+                    break;
+                case StageType.SideWatch:
+                    success = allTargetsHit;
+                    reason = $"표적을 다 못 맞혔습니다 {TargetScore}";
+                    break;
+                default:   // 창문, 임무: 착지 = 창문을 놓침
+                    success = false;
+                    reason = "창문을 지나쳐 바닥까지 내려갔습니다";
+                    break;
             }
 
-            stateMachine.Finish(success);
+            End(success, success ? "" : reason);
         }
     }
 }
